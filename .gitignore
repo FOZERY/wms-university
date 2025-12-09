@@ -1,41 +1,26 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# compiled output
+/dist
+/node_modules
+/build
 
-.github
-.cursor
+.env.*
+!.env.example
 
-# Dependencies
-node_modules
-.pnp
-.pnp.js
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
+# OS
+.DS_Store
 
-# Local env files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Testing
-.nyc_output
-blob-report/
-coverage
-test-results/
-playwright/.cache/
-playwright-report/
-
-
-# Turbo
-.turbo
-
-# Vercel
-.vercel
-
-# Build Outputs
-.next/
-out/
-build
-dist
+# Tests
+/coverage
+/.nyc_output
 
 # IDEs and editors
 /.idea
@@ -53,14 +38,22 @@ dist
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# Debug
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+# dotenv environment variable files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
 
-# Misc
-.DS_Store
-*.pem
+# temp directory
+.temp
+.tmp
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
