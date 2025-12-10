@@ -1,10 +1,22 @@
 import { Module } from '@nestjs/common';
-import { TypedConfigModule } from 'src/common/modules/config/config.module';
-import { AuthController } from 'src/modules/auth/auth.controller';
+import { TypedConfigModule, TypedConfigService } from 'src/common/modules/config/config.module';
+import { DrizzleModule } from 'src/common/modules/drizzle/drizzle.module';
+import { authControllers, authProviders } from 'src/modules/auth';
+
+const controllers = [...authControllers];
+const providers = [...authProviders];
 
 @Module({
-	controllers: [AuthController],
-	exports: [],
-	imports: [TypedConfigModule],
+	controllers,
+	imports: [
+		TypedConfigModule,
+		DrizzleModule.registerAsync({
+			inject: [TypedConfigService],
+			useFactory: (config: TypedConfigService) => ({
+				connectionString: config.get('DB_CONNECTION_STRING'),
+			}),
+		}),
+	],
+	providers,
 })
 export class AppModule {}

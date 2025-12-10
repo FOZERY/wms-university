@@ -1,5 +1,6 @@
 import { IsSchema, Static, StaticDecode, StaticEncode, TSchema } from 'typebox';
 import { Compile, Validator } from 'typebox/compile';
+import { TValidationError } from 'typebox/error';
 import { DecodeUnsafe, EncodeUnsafe } from 'typebox/value';
 
 export type ValidatorOptions = {
@@ -36,6 +37,16 @@ const defaultOptions: DefaultValidatorOptions = {
 	decode: true,
 	defaults: true,
 };
+
+export class TypeBoxValidatorError extends Error {
+	public readonly errors: TValidationError[];
+
+	constructor(errors: TValidationError[]) {
+		super(`Validation error`);
+
+		this.errors = errors;
+	}
+}
 
 export class TypeBoxValidator<
 	T extends TSchema,
@@ -83,8 +94,8 @@ export class TypeBoxValidator<
 
 		if (!this.validator.Check(processedValue)) {
 			const errors = this.validator.Errors(processedValue);
-			// todo: think
-			throw new Error(`Validation failed: ${JSON.stringify(errors)}`);
+
+			throw new TypeBoxValidatorError(errors);
 		}
 
 		if (this.options?.encode) {

@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService, Path, PathValue } from '@nestjs/config';
 import Type, { Static } from 'typebox';
 import Value from 'typebox/value';
 
+// biome-ignore lint/nursery/useExplicitType: Use explicit type
 const configSchema = Type.Object({
 	DB_CONNECTION_STRING: Type.String({ format: 'uri' }),
 	NODE_ENV: Type.Union(
@@ -10,6 +11,9 @@ const configSchema = Type.Object({
 		{ default: 'development' }
 	),
 	PORT: Type.Integer({ default: 3000 }),
+	REDIS_CONNECTION_STRING: Type.String({ format: 'uri' }),
+	SESSION_SECRET: Type.String({ minLength: 32 }),
+	SESSION_MAX_AGE: Type.Integer({ default: 3600000 }), // 1 hour
 });
 
 function validate(config: Record<string, unknown>): ConfigType {
@@ -21,7 +25,7 @@ export interface ConfigType extends Static<typeof configSchema> {}
 
 @Injectable()
 export class TypedConfigService extends ConfigService<ConfigType, true> {
-	get<P extends Path<ConfigType>>(propertyPath: P): PathValue<ConfigType, P> {
+	public get<P extends Path<ConfigType>>(propertyPath: P): PathValue<ConfigType, P> {
 		return super.get(propertyPath, { infer: true });
 	}
 }
