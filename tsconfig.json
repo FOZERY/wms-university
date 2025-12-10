@@ -19,6 +19,8 @@
 		"strict": true,
 		"forceConsistentCasingInFileNames": true,
 		"noImplicitAny": false,
+		"noUncheckedIndexedAccess": true,
 		"noFallthroughCasesInSwitch": false
-	}
+	},
+	"exclude": ["node_modules", "dist"]
 }

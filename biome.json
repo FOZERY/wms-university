@@ -7,6 +7,7 @@
 				"useSortedKeys": "on"
 			}
 		},
+		"includes": ["!src/common/modules/drizzle/schema.ts"],
 		"enabled": true
 	},
 	"files": {
@@ -48,12 +49,23 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
+			"nursery": {
+				"useExplicitType": {
+					"level": "off"
+				}
+			},
 			"complexity": {
 				"noForEach": "error",
 				"noStaticOnlyClass": "off"
 			},
 			"recommended": true,
 			"style": {
+				"useConsistentMemberAccessibility": {
+					"level": "error",
+					"options": {
+						"accessibility": "explicit"
+					}
+				},
 				"useReadonlyClassProperties": "warn",
 				"useImportType": "off"
 			}
