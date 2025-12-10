@@ -5,8 +5,6 @@ import { defineConfig } from 'drizzle-kit';
 const envFile = `.env.${process.env.NODE_ENV?.toLowerCase() || 'development'}`;
 dotenv.config({ path: path.resolve(__dirname, envFile) });
 
-console.log(__dirname);
-
 export default defineConfig({
 	casing: 'snake_case',
 	dbCredentials: {
