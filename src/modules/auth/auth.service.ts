@@ -1,26 +1,20 @@
 import { UnauthorizedException } from '@nestjs/common';
 import bcrypt from 'bcrypt';
-import { eq, InferSelectModel } from 'drizzle-orm';
-import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { InferSelectModel } from 'drizzle-orm';
 import Redis from 'ioredis';
-import { usersTable } from 'src/common/modules/drizzle/schema';
-import { firstOrNull } from 'src/common/utils/result.utils';
-import { uuidV4 } from 'src/common/utils/uuid';
-import { type LoginBodySchemaType } from './schemas/login';
+import { LoginBodySchemaType } from './schemas/login';
+import { uuidV4 } from '../../common/utils/uuid';
+import { usersTable } from '../../common/modules/drizzle/schema';
+import { UsersService } from '../users/users.service';
 
 export class AuthService {
-	constructor(
-		private readonly db: PostgresJsDatabase,
+	public constructor(
+		private readonly usersService: UsersService,
 		private readonly redis: Redis
 	) {}
 
 	public async login(data: LoginBodySchemaType): Promise<{ sessionId: string }> {
-		const existingUser = await this.db
-			.select()
-			.from(usersTable)
-			.where(eq(usersTable.login, data.login))
-			.limit(1)
-			.then(firstOrNull);
+		const existingUser = await this.usersService.getUserByLogin(data.login);
 
 		if (!existingUser) {
 			throw new UnauthorizedException('Invalid login or password');

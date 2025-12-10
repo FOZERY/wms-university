@@ -1,5 +1,5 @@
 import { timestamp, uuid } from 'drizzle-orm/pg-core';
-import { uuidV7 } from 'src/common/utils/uuid';
+import { uuidV7 } from '../../../utils/uuid';
 
 export const idUuidV7 = uuid().$defaultFn(() => uuidV7());
 

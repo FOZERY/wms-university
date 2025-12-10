@@ -41,7 +41,7 @@ const defaultOptions: DefaultValidatorOptions = {
 export class TypeBoxValidatorError extends Error {
 	public readonly errors: TValidationError[];
 
-	constructor(errors: TValidationError[]) {
+	public constructor(errors: TValidationError[]) {
 		super(`Validation error`);
 
 		this.errors = errors;
@@ -57,7 +57,7 @@ export class TypeBoxValidator<
 
 	private readonly options: Options;
 
-	constructor(
+	public constructor(
 		private readonly schema: T,
 		options?: Options
 	) {

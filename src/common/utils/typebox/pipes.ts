@@ -14,7 +14,7 @@ export class TypeboxValidatorPipe<
 {
 	private readonly validator: TypeBoxValidator<Schema, Options>;
 
-	constructor(schema: Schema, options?: Options) {
+	public constructor(schema: Schema, options?: Options) {
 		this.validator = new TypeBoxValidator(schema, options);
 	}
 

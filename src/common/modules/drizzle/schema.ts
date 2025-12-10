@@ -1,6 +1,6 @@
 import { pgEnum, pgTable, text } from 'drizzle-orm/pg-core';
-import { RolesEnum } from 'src/common/types/roles';
 import { idUuidV7, timestamps } from './helpers/schema.helpers';
+import { RolesEnum } from 'src/common/types/roles';
 
 export const roleEnum = pgEnum('role', ['admin', 'storeManager', 'storekeeper']);
 
