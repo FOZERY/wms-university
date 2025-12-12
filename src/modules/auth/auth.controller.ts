@@ -58,9 +58,7 @@ export class AuthController {
 	@UseGuards(AuthGuard)
 	@ApiSwagger({
 		response: {
-			200: {
-				schema: getMeResultSchema,
-			},
+			200: getMeResultSchema,
 		},
 	})
 	public async me(@CurrentUserSession() userSession: UserSession): Promise<GetMeResultSchemaType> {

@@ -1,4 +1,4 @@
-import { UserRole } from './roles';
+import { UserRoles } from '../enums/roles';
 
 export type UserSession = {
 	id: string;
@@ -6,5 +6,5 @@ export type UserSession = {
 	firstname: string;
 	lastname: string;
 	middlename?: string;
-	role: UserRole;
+	role: UserRoles;
 };

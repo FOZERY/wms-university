@@ -1,4 +1,4 @@
-import { UserRole } from 'src/common/types/roles';
+import { UserRoles } from 'src/common/enums/roles';
 import Type, { Static } from 'typebox';
 
 export const getMeResultSchema = Type.Object({
@@ -7,7 +7,7 @@ export const getMeResultSchema = Type.Object({
 	firstname: Type.String(),
 	lastname: Type.String(),
 	middlename: Type.Optional(Type.String()),
-	role: Type.Enum(UserRole),
+	role: Type.Enum(UserRoles),
 });
 
 export type GetMeResultSchemaType = Static<typeof getMeResultSchema>;
