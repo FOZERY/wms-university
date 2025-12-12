@@ -29,6 +29,13 @@
       "when": 1765566799434,
       "tag": "0003_panoramic_mandarin",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1765576538141,
+      "tag": "0004_charming_devos",
+      "breakpoints": true
     }
   ]
 }

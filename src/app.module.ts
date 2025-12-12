@@ -4,9 +4,10 @@ import { authControllers, authProviders } from 'src/modules/auth';
 import { suppliersControllers, suppliersProviders } from 'src/modules/suppliers';
 import { DrizzleModule } from './common/modules/drizzle/drizzle.module';
 import { RedisModule } from './common/modules/redis/redis.module';
+import { nomenclatureControllers, nomenclatureProviders } from './modules/nomenclature';
 
-const controllers = [...authControllers, ...suppliersControllers];
-const providers = [...authProviders, ...suppliersProviders];
+const controllers = [...authControllers, ...suppliersControllers, ...nomenclatureControllers];
+const providers = [...authProviders, ...suppliersProviders, ...nomenclatureProviders];
 
 @Module({
 	controllers,
