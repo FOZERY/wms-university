@@ -4,10 +4,12 @@ export const loginBodySchema = Type.Object({
 	login: Type.String({
 		minLength: 5,
 		maxLength: 255,
+		example: 'login',
 	}),
 	password: Type.String({
 		minLength: 8,
 		maxLength: 255,
+		example: 'strongPassword',
 	}),
 });
 

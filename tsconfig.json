@@ -21,9 +21,9 @@
 		"skipLibCheck": true,
 		"strict": true,
 		"forceConsistentCasingInFileNames": true,
-		"noImplicitAny": false,
+		"noImplicitAny": true,
 		"noUncheckedIndexedAccess": true,
-		"noFallthroughCasesInSwitch": false
+		"noFallthroughCasesInSwitch": true
 	},
 	"exclude": ["node_modules", "dist"]
 }

@@ -13,5 +13,6 @@ import { TypedConfigService } from '../config/config.module';
 			},
 		},
 	],
+	exports: [Redis],
 })
 export class RedisModule {}
