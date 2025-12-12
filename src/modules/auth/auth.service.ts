@@ -1,26 +1,22 @@
 import { UnauthorizedException } from '@nestjs/common';
 import bcrypt from 'bcrypt';
-import { eq, InferSelectModel } from 'drizzle-orm';
-import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { InferSelectModel } from 'drizzle-orm';
 import Redis from 'ioredis';
-import { usersTable } from 'src/common/modules/drizzle/schema';
-import { firstOrNull } from 'src/common/utils/result.utils';
+import { TypedConfigService } from 'src/common/modules/config/config.module';
 import { uuidV4 } from 'src/common/utils/uuid';
-import { type LoginBodySchemaType } from './schemas/login';
+import { usersTable } from '../../common/modules/drizzle/schema';
+import { UsersService } from '../users/users.service';
+import { LoginBodySchemaType } from './schemas/login';
 
 export class AuthService {
-	constructor(
-		private readonly db: PostgresJsDatabase,
-		private readonly redis: Redis
+	public constructor(
+		private readonly usersService: UsersService,
+		private readonly redis: Redis,
+		private readonly config: TypedConfigService // <-- Added config
 	) {}
 
 	public async login(data: LoginBodySchemaType): Promise<{ sessionId: string }> {
-		const existingUser = await this.db
-			.select()
-			.from(usersTable)
-			.where(eq(usersTable.login, data.login))
-			.limit(1)
-			.then(firstOrNull);
+		const existingUser = await this.usersService.getUserByLogin(data.login);
 
 		if (!existingUser) {
 			throw new UnauthorizedException('Invalid login or password');
@@ -48,8 +44,19 @@ export class AuthService {
 		data: Omit<InferSelectModel<typeof usersTable>, 'passwordHash' | 'createdAt' | 'updatedAt'>
 	): Promise<string> {
 		const sessionId = uuidV4();
-		const sessionKey = `user_session:${sessionId}`;
-		await this.redis.set(sessionKey, JSON.stringify(data), 'EX', 3600); // 1 hour TTL
+		const sessionKey = this.getSessionKey(sessionId);
+
+		const sessionMaxAge = this.config.get('SESSION_MAX_AGE');
+		await this.redis.set(sessionKey, JSON.stringify(data), 'PX', sessionMaxAge);
 		return sessionId;
+	}
+
+	public async logout(sessionId: string): Promise<void> {
+		const sessionKey = this.getSessionKey(sessionId);
+		await this.redis.del(sessionKey);
+	}
+
+	private getSessionKey(sessionId: string): string {
+		return `user_session:${sessionId}`;
 	}
 }

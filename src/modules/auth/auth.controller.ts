@@ -1,9 +1,17 @@
-import { Controller, HttpCode, Post, Res } from '@nestjs/common';
+import { Controller, Get, HttpCode, Post, Res, UseGuards } from '@nestjs/common';
 import { type Response } from 'express';
 import { TypeboxBody } from 'src/common';
+import {
+	CurrentUserSession,
+	SessionIdDecorator,
+} from 'src/common/decorators/user-session.decorator';
+import { AuthGuard } from 'src/common/guards/auth.guard';
 import { TypedConfigService } from 'src/common/modules/config/config.module';
-import { AuthService } from 'src/modules/auth/auth.service';
-import { loginBodySchema, type LoginBodySchemaType } from 'src/modules/auth/schemas/login';
+import { ApiSwagger } from 'src/common/swagger';
+import { type UserSession } from 'src/common/types/user-session';
+import { AuthService } from './auth.service';
+import { loginBodySchema, type LoginBodySchemaType } from './schemas/login';
+import { getMeResultSchema, GetMeResultSchemaType } from './schemas/me';
 
 @Controller('auth')
 export class AuthController {
@@ -13,6 +21,11 @@ export class AuthController {
 	) {}
 
 	@HttpCode(201)
+	@ApiSwagger({
+		request: {
+			body: loginBodySchema,
+		},
+	})
 	@Post('login')
 	public async login(
 		@TypeboxBody(loginBodySchema) body: LoginBodySchemaType,
@@ -26,5 +39,31 @@ export class AuthController {
 			secure: false,
 			sameSite: 'strict',
 		});
+	}
+
+	@HttpCode(200)
+	@Post('logout')
+	@UseGuards(AuthGuard)
+	public async logout(
+		@SessionIdDecorator() sessionId: string,
+		@Res({ passthrough: true }) res: Response
+	): Promise<void> {
+		await this.authService.logout(sessionId);
+
+		res.clearCookie('sessionId');
+	}
+
+	@HttpCode(200)
+	@Get('me')
+	@UseGuards(AuthGuard)
+	@ApiSwagger({
+		response: {
+			200: {
+				schema: getMeResultSchema,
+			},
+		},
+	})
+	public async me(@CurrentUserSession() userSession: UserSession): Promise<GetMeResultSchemaType> {
+		return userSession;
 	}
 }
