@@ -1,6 +1,6 @@
-import path from 'node:path';
 import dotenv from 'dotenv';
 import { defineConfig } from 'drizzle-kit';
+import path from 'node:path';
 
 const envFile = `.env.${process.env.NODE_ENV?.toLowerCase() || 'development'}`;
 dotenv.config({ path: path.resolve(__dirname, envFile) });
