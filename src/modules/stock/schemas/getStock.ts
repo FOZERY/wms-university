@@ -1,6 +1,6 @@
 import Type, { Static } from 'typebox';
 
-function createGetStockQueriesSchema<F extends boolean>(noDefault: F) {
+function createGetStockQueriesSchema<F extends boolean>(_noDefault: F) {
 	return Type.Object({
 		warehouseId: Type.Optional(Type.Integer()),
 	});

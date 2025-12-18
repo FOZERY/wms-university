@@ -126,7 +126,9 @@ export class NomenclatureController {
 			204: Type.Void(),
 		},
 	})
-	public async delete(@TypeboxParams(getByIdParamsSchema) params: GetByIdParamsSchemaType): Promise<void> {
+	public async delete(
+		@TypeboxParams(getByIdParamsSchema) params: GetByIdParamsSchemaType
+	): Promise<void> {
 		const item = await this.nomenclatureService.getById(params.id);
 		if (!item) {
 			throw new NotFoundException('Item not found');

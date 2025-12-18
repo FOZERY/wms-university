@@ -116,7 +116,9 @@ export class SuppliersController {
 			204: Type.Void(),
 		},
 	})
-	public async delete(@TypeboxParams(getByIdParamsSchema) params: GetByIdParamsSchemaType): Promise<void> {
+	public async delete(
+		@TypeboxParams(getByIdParamsSchema) params: GetByIdParamsSchemaType
+	): Promise<void> {
 		const supplier = await this.suppliersService.getById(params.id);
 		if (!supplier) {
 			throw new NotFoundException('Supplier not found');

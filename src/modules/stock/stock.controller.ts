@@ -6,10 +6,7 @@ import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { ApiSwagger } from 'src/common/swagger';
 import Type from 'typebox';
-import {
-	adjustStockBodySchema,
-	AdjustStockBodySchemaType,
-} from './schemas/adjustStock';
+import { adjustStockBodySchema, AdjustStockBodySchemaType } from './schemas/adjustStock';
 import { getStockQueriesSchema, GetStockQueriesSchemaPrivateType } from './schemas/getStock';
 import { stockBalanceSchema, StockBalanceSchemaType } from './schemas/stockBalance';
 import { StockService } from './stock.service';
@@ -48,11 +45,6 @@ export class StockController {
 	public async adjustStock(
 		@TypeboxBody(adjustStockBodySchema) body: AdjustStockBodySchemaType
 	): Promise<void> {
-		await this.stockService.adjustStock(
-			body.warehouseId,
-			body.itemId,
-			body.quantity,
-			body.type
-		);
+		await this.stockService.adjustStock(body.warehouseId, body.itemId, body.quantity, body.type);
 	}
 }

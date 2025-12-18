@@ -116,7 +116,9 @@ export class WarehousesController {
 			204: Type.Void(),
 		},
 	})
-	public async delete(@TypeboxParams(getByIdParamsSchema) params: GetByIdParamsSchemaType): Promise<void> {
+	public async delete(
+		@TypeboxParams(getByIdParamsSchema) params: GetByIdParamsSchemaType
+	): Promise<void> {
 		const warehouse = await this.warehousesService.getById(params.id);
 		if (!warehouse) {
 			throw new NotFoundException('Warehouse not found');

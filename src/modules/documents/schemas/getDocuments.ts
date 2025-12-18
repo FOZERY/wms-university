@@ -9,11 +9,7 @@ export const documentListItemSchema = Type.Object({
 		Type.Literal('transfer'),
 		Type.Literal('production'),
 	]),
-	status: Type.Union([
-		Type.Literal('draft'),
-		Type.Literal('completed'),
-		Type.Literal('cancelled'),
-	]),
+	status: Type.Union([Type.Literal('draft'), Type.Literal('completed'), Type.Literal('cancelled')]),
 	date: Type.String({ description: 'YYYY-MM-DD' }),
 	warehouseFromId: TNullable(Type.Number()),
 	warehouseToId: TNullable(Type.Number()),

@@ -105,7 +105,7 @@ export class DocumentsService {
 			.where(eq(documentItemsTable.documentId, id));
 
 		// Get related entities if needed
-		let supplier = undefined;
+		let supplier: { id: number; name: string } | undefined;
 		if (doc.supplierId) {
 			const s = await this.db
 				.select({ id: suppliersTable.id, name: suppliersTable.name })
@@ -116,7 +116,7 @@ export class DocumentsService {
 			if (s) supplier = s;
 		}
 
-		let warehouseFrom = undefined;
+		let warehouseFrom: { id: number; name: string } | undefined;
 		if (doc.warehouseFromId) {
 			const wh = await this.db
 				.select({ id: warehousesTable.id, name: warehousesTable.name })
@@ -127,7 +127,7 @@ export class DocumentsService {
 			if (wh) warehouseFrom = wh;
 		}
 
-		let warehouseTo = undefined;
+		let warehouseTo: { id: number; name: string } | undefined;
 		if (doc.warehouseToId) {
 			const wh = await this.db
 				.select({ id: warehousesTable.id, name: warehousesTable.name })
@@ -288,7 +288,9 @@ export class DocumentsService {
 			// Validate that items have direction
 			for (const item of data.items) {
 				if (!item.direction) {
-					throw new BadRequestException('Direction is required for all items in production documents');
+					throw new BadRequestException(
+						'Direction is required for all items in production documents'
+					);
 				}
 			}
 		}
@@ -299,7 +301,8 @@ export class DocumentsService {
 	}
 
 	private async generateDocumentNumber(type: DocumentType): Promise<string> {
-		const prefix = type === DocumentType.Incoming ? 'ПР' : type === DocumentType.Transfer ? 'РС' : 'ПД';
+		const prefix =
+			type === DocumentType.Incoming ? 'ПР' : type === DocumentType.Transfer ? 'РС' : 'ПД';
 
 		// Get last document number of this type
 		const lastDoc = await this.db

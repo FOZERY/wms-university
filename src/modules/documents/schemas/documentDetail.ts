@@ -25,11 +25,7 @@ export const documentDetailSchema = Type.Object({
 		Type.Literal('transfer'),
 		Type.Literal('production'),
 	]),
-	status: Type.Union([
-		Type.Literal('draft'),
-		Type.Literal('completed'),
-		Type.Literal('cancelled'),
-	]),
+	status: Type.Union([Type.Literal('draft'), Type.Literal('completed'), Type.Literal('cancelled')]),
 	date: Type.String({ description: 'YYYY-MM-DD' }),
 	userId: Type.String({ format: 'uuid' }),
 	warehouseFromId: TNullable(Type.Number()),

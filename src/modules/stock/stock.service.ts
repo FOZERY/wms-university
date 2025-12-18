@@ -1,11 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import {
-	itemsTable,
-	stockBalancesTable,
-	warehousesTable,
-} from 'src/common/modules/drizzle/schema';
+import { itemsTable, stockBalancesTable, warehousesTable } from 'src/common/modules/drizzle/schema';
 import { firstOrNull } from 'src/common/utils/result.utils';
 import { StockBalanceSchemaType } from './schemas/stockBalance';
 
@@ -53,15 +49,14 @@ export class StockService {
 			.then(firstOrNull);
 
 		const quantityNum = parseFloat(quantity);
-		if (isNaN(quantityNum) || quantityNum <= 0) {
+		if (Number.isNaN(quantityNum) || quantityNum <= 0) {
 			throw new BadRequestException('Quantity must be a positive number');
 		}
 
 		if (current) {
 			// Update existing balance
 			const currentQty = parseFloat(current.quantity);
-			const newQty =
-				type === 'increase' ? currentQty + quantityNum : currentQty - quantityNum;
+			const newQty = type === 'increase' ? currentQty + quantityNum : currentQty - quantityNum;
 
 			if (newQty < 0) {
 				throw new BadRequestException('Insufficient stock for decrease operation');

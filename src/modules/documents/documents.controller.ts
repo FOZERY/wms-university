@@ -1,5 +1,11 @@
 import { Controller, Get, NotFoundException, Patch, Post, UseGuards } from '@nestjs/common';
-import { CurrentUserSession, TypeboxBody, TypeboxParams, TypeboxQueries, UserSession } from 'src/common';
+import {
+	CurrentUserSession,
+	TypeboxBody,
+	TypeboxParams,
+	TypeboxQueries,
+	UserSession,
+} from 'src/common';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserRoles } from 'src/common/enums/roles';
 import { AuthGuard } from 'src/common/guards/auth.guard';
@@ -7,10 +13,7 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 import { ApiSwagger } from 'src/common/swagger';
 import Type from 'typebox';
 import { DocumentsService } from './documents.service';
-import {
-	createDocumentBodySchema,
-	CreateDocumentBodySchemaType,
-} from './schemas/createDocument';
+import { createDocumentBodySchema, CreateDocumentBodySchemaType } from './schemas/createDocument';
 import { documentDetailSchema, DocumentDetailSchemaType } from './schemas/documentDetail';
 import { getByIdParamsSchema, GetByIdParamsSchemaType } from './schemas/getById';
 import {
