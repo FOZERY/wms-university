@@ -7,6 +7,7 @@ import { RedisModule } from './common/modules/redis/redis.module';
 import { nomenclatureControllers, nomenclatureProviders } from './modules/nomenclature';
 import { warehousesControllers, warehousesProviders } from './modules/warehouses';
 import { stockControllers, stockProviders } from './modules/stock';
+import { statsControllers, statsProviders } from './modules/stats';
 
 const controllers = [
 	...authControllers,
@@ -14,6 +15,7 @@ const controllers = [
 	...nomenclatureControllers,
 	...warehousesControllers,
 	...stockControllers,
+	...statsControllers,
 ];
 const providers = [
 	...authProviders,
@@ -21,6 +23,7 @@ const providers = [
 	...nomenclatureProviders,
 	...warehousesProviders,
 	...stockProviders,
+	...statsProviders,
 ];
 
 @Module({
