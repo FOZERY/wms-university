@@ -8,6 +8,7 @@ import { nomenclatureControllers, nomenclatureProviders } from './modules/nomenc
 import { warehousesControllers, warehousesProviders } from './modules/warehouses';
 import { stockControllers, stockProviders } from './modules/stock';
 import { statsControllers, statsProviders } from './modules/stats';
+import { documentsControllers, documentsProviders } from './modules/documents';
 
 const controllers = [
 	...authControllers,
@@ -16,6 +17,7 @@ const controllers = [
 	...warehousesControllers,
 	...stockControllers,
 	...statsControllers,
+	...documentsControllers,
 ];
 const providers = [
 	...authProviders,
@@ -24,6 +26,7 @@ const providers = [
 	...warehousesProviders,
 	...stockProviders,
 	...statsProviders,
+	...documentsProviders,
 ];
 
 @Module({
