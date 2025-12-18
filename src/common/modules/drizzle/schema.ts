@@ -60,7 +60,7 @@ export const documentsTable = pgTable('documents', {
 	id: serial().primaryKey(),
 	number: text().notNull().unique(),
 	type: documentTypeEnum().notNull(),
-	status: documentStatusEnum().default('draft').notNull(),
+	status: documentStatusEnum().default(DocumentStatus.Draft).notNull(),
 	date: date().notNull().defaultNow(),
 	userId: uuid()
 		.notNull()

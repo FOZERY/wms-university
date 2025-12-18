@@ -5,9 +5,20 @@ import { suppliersControllers, suppliersProviders } from 'src/modules/suppliers'
 import { DrizzleModule } from './common/modules/drizzle/drizzle.module';
 import { RedisModule } from './common/modules/redis/redis.module';
 import { nomenclatureControllers, nomenclatureProviders } from './modules/nomenclature';
+import { warehousesControllers, warehousesProviders } from './modules/warehouses';
 
-const controllers = [...authControllers, ...suppliersControllers, ...nomenclatureControllers];
-const providers = [...authProviders, ...suppliersProviders, ...nomenclatureProviders];
+const controllers = [
+	...authControllers,
+	...suppliersControllers,
+	...nomenclatureControllers,
+	...warehousesControllers,
+];
+const providers = [
+	...authProviders,
+	...suppliersProviders,
+	...nomenclatureProviders,
+	...warehousesProviders,
+];
 
 @Module({
 	controllers,
