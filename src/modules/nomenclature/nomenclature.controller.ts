@@ -1,4 +1,13 @@
-import { Controller, Get, NotFoundException, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+	Controller,
+	Delete,
+	Get,
+	HttpCode,
+	NotFoundException,
+	Patch,
+	Post,
+	UseGuards,
+} from '@nestjs/common';
 import {
 	CurrentUserSession,
 	TypeboxBody,
@@ -104,5 +113,24 @@ export class NomenclatureController {
 		const updated = await this.nomenclatureService.update(params.id, body, userSession);
 
 		return updated;
+	}
+
+	@Delete(':id')
+	@Roles(UserRoles.Manager)
+	@HttpCode(204)
+	@ApiSwagger({
+		request: {
+			params: getByIdParamsSchema,
+		},
+		response: {
+			204: Type.Void(),
+		},
+	})
+	public async delete(@TypeboxParams(getByIdParamsSchema) params: GetByIdParamsSchemaType): Promise<void> {
+		const item = await this.nomenclatureService.getById(params.id);
+		if (!item) {
+			throw new NotFoundException('Item not found');
+		}
+		await this.nomenclatureService.delete(params.id);
 	}
 }

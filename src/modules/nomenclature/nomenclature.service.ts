@@ -110,4 +110,8 @@ export class NomenclatureService {
 
 		return firstOrThrow(updated);
 	}
+
+	public async delete(id: ItemDbType['id']): Promise<void> {
+		await this.db.delete(itemsTable).where(eq(itemsTable.id, id));
+	}
 }
