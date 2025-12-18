@@ -6,18 +6,21 @@ import { DrizzleModule } from './common/modules/drizzle/drizzle.module';
 import { RedisModule } from './common/modules/redis/redis.module';
 import { nomenclatureControllers, nomenclatureProviders } from './modules/nomenclature';
 import { warehousesControllers, warehousesProviders } from './modules/warehouses';
+import { stockControllers, stockProviders } from './modules/stock';
 
 const controllers = [
 	...authControllers,
 	...suppliersControllers,
 	...nomenclatureControllers,
 	...warehousesControllers,
+	...stockControllers,
 ];
 const providers = [
 	...authProviders,
 	...suppliersProviders,
 	...nomenclatureProviders,
 	...warehousesProviders,
+	...stockProviders,
 ];
 
 @Module({
