@@ -19,6 +19,10 @@ async function bootstrap() {
 	const document = SwaggerModule.createDocument(app, swaggerConfig);
 	SwaggerModule.setup('swagger', app, document);
 
+	// Public JSON export of OpenAPI document for tooling/CI. Serves /openapi.json
+	// Note: this uses the underlying HTTP adapter (Express) to expose a simple GET endpoint.
+	app.getHttpAdapter()?.get('/openapi.json', (_req, res) => res.json(document));
+
 	await app.listen(config.get('PORT'));
 }
 bootstrap();

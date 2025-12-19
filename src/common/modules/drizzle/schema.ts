@@ -16,6 +16,7 @@ import { DocumentType } from 'src/common/enums/document-type';
 import { DocumentStatus } from 'src/common/enums/document-status';
 import { DocumentItemDirection } from 'src/common/enums/document-item-direction';
 import { idUuidV7, timestamps } from './helpers/schema.helpers';
+import { table } from 'node:console';
 
 export const roleEnum = pgEnum('role', UserRoles);
 
@@ -114,7 +115,5 @@ export const stockBalancesTable = pgTable(
 		reserved: numeric({ precision: 14, scale: 3 }).default('0').notNull(),
 		lastUpdated: timestamp().defaultNow().notNull(),
 	},
-	(table) => ({
-		pk: primaryKey({ columns: [table.itemId, table.warehouseId] }),
-	})
+	(table) => [primaryKey({ columns: [table.itemId, table.warehouseId] })]
 );
