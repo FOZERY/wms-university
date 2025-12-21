@@ -7,7 +7,7 @@ function createGetListQueriesSchema<F extends boolean>(noDefault: F) {
 		limit: createLimitSchema(noDefault),
 		offset: createOffsetSchema(noDefault),
 		sort: createSortSchema(noDefault, ['id', 'name']),
-		name: Type.Optional(Type.String({ minLength: 1 })),
+		search: Type.Optional(Type.String({ minLength: 1 })),
 	});
 }
 

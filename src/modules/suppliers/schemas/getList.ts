@@ -6,8 +6,9 @@ function createGetListQueriesSchema<F extends boolean>(noDefault: F) {
 	return Type.Object({
 		limit: createLimitSchema(noDefault),
 		offset: createOffsetSchema(noDefault),
-		sort: createSortSchema(noDefault, ['id', 'name', 'inn']),
-		name: Type.Optional(Type.String({ minLength: 1 })),
+		sort: createSortSchema(noDefault, ['id', 'name', 'inn', 'phone', 'email']),
+		// free-text search across several fields
+		search: Type.Optional(Type.String({ minLength: 1 })),
 	});
 }
 

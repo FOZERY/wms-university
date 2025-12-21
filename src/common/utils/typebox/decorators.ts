@@ -1,4 +1,4 @@
-import { Body } from '@nestjs/common';
+import { Body, Param, Query } from '@nestjs/common';
 import { createValidatorPipe } from 'src/common/utils/typebox/pipes';
 import { ValidatorOptions } from 'src/common/utils/typebox/validator';
 import { TSchema } from 'typebox';
@@ -12,9 +12,9 @@ export function TypeboxBody(schema: TSchema, options?: ValidatorOptions): Parame
 }
 
 export function TypeboxQueries(schema: TSchema, options?: ValidatorOptions): ParameterDecorator {
-	return Body(createValidatorPipe(schema, addConvert(options)));
+	return Query(createValidatorPipe(schema, addConvert(options)));
 }
 
 export function TypeboxParams(schema: TSchema, options?: ValidatorOptions): ParameterDecorator {
-	return Body(createValidatorPipe(schema, addConvert(options)));
+	return Param(createValidatorPipe(schema, addConvert(options)));
 }

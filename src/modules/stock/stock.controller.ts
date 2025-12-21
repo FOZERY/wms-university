@@ -28,7 +28,7 @@ export class StockController {
 	public async getBalance(
 		@TypeboxQueries(getStockQueriesSchema) queries: GetStockQueriesSchemaPrivateType
 	): Promise<StockBalanceSchemaType[]> {
-		return await this.stockService.getBalance(queries.warehouseId);
+		return await this.stockService.getBalance(queries);
 	}
 
 	@Post('adjust')

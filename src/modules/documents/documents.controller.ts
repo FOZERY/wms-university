@@ -20,7 +20,7 @@ import {
 	documentListItemSchema,
 	DocumentListItemSchemaType,
 	getDocumentsQueriesSchema,
-	GetDocumentsQueriesSchemaType,
+	GetDocumentsQueriesSchemaPrivateType,
 } from './schemas/getDocuments';
 
 @Controller('documents')
@@ -38,10 +38,9 @@ export class DocumentsController {
 		},
 	})
 	public async list(
-		@TypeboxQueries(getDocumentsQueriesSchema) queries: GetDocumentsQueriesSchemaType,
-		@CurrentUserSession() userSession: UserSession
+		@TypeboxQueries(getDocumentsQueriesSchema) queries: GetDocumentsQueriesSchemaPrivateType
 	): Promise<DocumentListItemSchemaType[]> {
-		return await this.documentsService.list(queries, userSession);
+		return await this.documentsService.list(queries);
 	}
 
 	@Get(':id')

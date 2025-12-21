@@ -32,7 +32,7 @@ export const usersTable = pgTable('users', {
 
 export const suppliersTable = pgTable('suppliers', {
 	id: serial().primaryKey(),
-	name: text().notNull(),
+	name: text().notNull().unique(),
 	inn: text(),
 	contactPerson: text(),
 	phone: text(),

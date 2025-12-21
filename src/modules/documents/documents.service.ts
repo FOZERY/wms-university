@@ -1,10 +1,9 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { and, eq, gte, lte, sql } from 'drizzle-orm';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DocumentItemDirection } from 'src/common/enums/document-item-direction';
 import { DocumentStatus } from 'src/common/enums/document-status';
 import { DocumentType } from 'src/common/enums/document-type';
-import { UserSession } from 'src/common/types/user-session';
 import {
 	documentItemsTable,
 	documentsTable,
@@ -13,13 +12,19 @@ import {
 	usersTable,
 	warehousesTable,
 } from 'src/common/modules/drizzle/schema';
+import { UserSession } from 'src/common/types/user-session';
 import { firstOrNull } from 'src/common/utils/result.utils';
 import { StockService } from '../stock/stock.service';
+import { setOrderByColumn } from 'src/common';
 import { CreateDocumentBodySchemaType } from './schemas/createDocument';
 import { DocumentDetailSchemaType } from './schemas/documentDetail';
-import { DocumentListItemSchemaType, GetDocumentsQueriesSchemaType } from './schemas/getDocuments';
+import {
+	DocumentListItemSchemaType,
+	GetDocumentsQueriesSchemaPrivateType,
+} from './schemas/getDocuments';
 import { DocumentDbType, DocumentItemInsertDbType } from './types';
 
+@Injectable()
 export class DocumentsService {
 	public constructor(
 		private readonly db: PostgresJsDatabase,
@@ -27,18 +32,18 @@ export class DocumentsService {
 	) {}
 
 	public async list(
-		queries: GetDocumentsQueriesSchemaType,
-		userSession: UserSession
+		queries: GetDocumentsQueriesSchemaPrivateType
 	): Promise<DocumentListItemSchemaType[]> {
-		const { type, status, dateFrom, dateTo } = queries;
+		const { type, status, dateFrom, dateTo, supplierId, sort, limit, offset } = queries;
 
 		const conditions = [];
 		if (type) conditions.push(eq(documentsTable.type, type as DocumentType));
 		if (status) conditions.push(eq(documentsTable.status, status as DocumentStatus));
 		if (dateFrom) conditions.push(gte(documentsTable.date, dateFrom));
 		if (dateTo) conditions.push(lte(documentsTable.date, dateTo));
+		if (supplierId) conditions.push(eq(documentsTable.supplierId, supplierId));
 
-		const documents = await this.db
+		let query = this.db
 			.select({
 				id: documentsTable.id,
 				number: documentsTable.number,
@@ -56,7 +61,21 @@ export class DocumentsService {
 			.from(documentsTable)
 			.leftJoin(usersTable, eq(documentsTable.userId, usersTable.id))
 			.where(and(...conditions))
-			.orderBy(sql`${documentsTable.date} DESC, ${documentsTable.id} DESC`);
+			.$dynamic();
+
+		// Apply sorting using setOrderByColumn (falls back to date,id desc when no sort provided)
+		query = setOrderByColumn(query, documentsTable.id, sort.id);
+		query = setOrderByColumn(query, documentsTable.date, sort.date);
+		query = setOrderByColumn(query, documentsTable.number, sort.number);
+		query = setOrderByColumn(query, documentsTable.type, sort.type);
+		query = setOrderByColumn(query, documentsTable.status, sort.status);
+
+		const hasSort = sort && Object.values(sort).some((v) => v !== undefined);
+		if (!hasSort) {
+			query = query.orderBy(sql`${documentsTable.date} DESC, ${documentsTable.id} DESC`);
+		}
+
+		const documents = await query.offset(offset).limit(limit);
 
 		return documents.map((doc) => ({
 			id: doc.id,

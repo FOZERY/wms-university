@@ -1,8 +1,10 @@
+import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { firstOrNull } from '../../common/utils/result.utils';
 import { usersTable } from '../../common/modules/drizzle/schema';
+import { firstOrNull } from '../../common/utils/result.utils';
 
+@Injectable()
 export class UsersService {
 	public constructor(private readonly db: PostgresJsDatabase) {}
 

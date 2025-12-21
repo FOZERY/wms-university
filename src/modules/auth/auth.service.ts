@@ -1,4 +1,4 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import bcrypt from 'bcrypt';
 import { InferSelectModel } from 'drizzle-orm';
 import Redis from 'ioredis';
@@ -8,6 +8,7 @@ import { usersTable } from '../../common/modules/drizzle/schema';
 import { UsersService } from '../users/users.service';
 import { LoginBodySchemaType } from './schemas/login';
 
+@Injectable()
 export class AuthService {
 	public constructor(
 		private readonly usersService: UsersService,
