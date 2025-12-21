@@ -14,7 +14,7 @@ export class StockService {
 	public async getBalance(
 		queries: GetStockQueriesSchemaPrivateType
 	): Promise<StockBalanceSchemaType[]> {
-		const { warehouseId, itemType, search, sort, offset, limit } = queries;
+		const { warehouseId, itemId, itemType, search, sort, offset, limit } = queries;
 		const availableExpr = sql<string>`${stockBalancesTable.quantity} - ${stockBalancesTable.reserved}`;
 
 		let query = this.db
@@ -36,6 +36,10 @@ export class StockService {
 		// Filters
 		if (warehouseId) {
 			query = query.where(eq(stockBalancesTable.warehouseId, warehouseId));
+		}
+
+		if (itemId) {
+			query = query.where(eq(stockBalancesTable.itemId, itemId));
 		}
 
 		if (itemType) {

@@ -5,6 +5,7 @@ import Type, { Static } from 'typebox';
 function createGetStockQueriesSchema<F extends boolean>(_noDefault: F) {
 	return Type.Object({
 		warehouseId: Type.Optional(Type.Integer()),
+		itemId: Type.Optional(Type.Integer()),
 		sort: createSortSchema(_noDefault, [
 			'warehouseName',
 			'itemName',
