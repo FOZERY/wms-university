@@ -33,6 +33,7 @@ export class NomenclatureService {
 		query = setOrderByColumn(query, itemsTable.code, sort.code);
 		query = setOrderByColumn(query, itemsTable.name, sort.name);
 		query = setOrderByColumn(query, itemsTable.type, sort.type);
+		query = setOrderByColumn(query, itemsTable.minQuantity, sort.minQuantity);
 		query = query.offset(offset).limit(limit);
 
 		return await query;

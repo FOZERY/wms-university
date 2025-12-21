@@ -1,3 +1,4 @@
+import { DocumentItemDirection, DocumentStatus, DocumentType } from 'src/common/enums';
 import { TNullable } from 'src/common/utils/typebox/extensions';
 import Type, { Static } from 'typebox';
 
@@ -5,7 +6,7 @@ export const documentItemSchema = Type.Object({
 	id: Type.Optional(Type.Number()),
 	itemId: Type.Number(),
 	quantity: Type.String({ description: 'Decimal as string' }),
-	direction: Type.Optional(Type.Union([Type.Literal('in'), Type.Literal('out')])),
+	direction: Type.Optional(Type.Enum(DocumentItemDirection)),
 	price: Type.Optional(Type.String({ description: 'Decimal as string' })),
 	item: Type.Object({
 		id: Type.Number(),
@@ -20,12 +21,8 @@ export type DocumentItemSchemaType = Static<typeof documentItemSchema>;
 export const documentDetailSchema = Type.Object({
 	id: Type.Number(),
 	number: Type.String(),
-	type: Type.Union([
-		Type.Literal('incoming'),
-		Type.Literal('transfer'),
-		Type.Literal('production'),
-	]),
-	status: Type.Union([Type.Literal('draft'), Type.Literal('completed'), Type.Literal('cancelled')]),
+	type: Type.Enum(DocumentType),
+	status: Type.Enum(DocumentStatus),
 	date: Type.String({ description: 'YYYY-MM-DD' }),
 	userId: Type.String({ format: 'uuid' }),
 	warehouseFromId: TNullable(Type.Number()),

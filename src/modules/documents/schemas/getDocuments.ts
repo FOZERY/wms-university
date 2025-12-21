@@ -1,16 +1,13 @@
 import { createLimitSchema, createOffsetSchema, createSortSchema } from 'src/common';
+import { DocumentStatus, DocumentType } from 'src/common/enums';
 import { TNullable } from 'src/common/utils/typebox/extensions';
 import Type, { Static } from 'typebox';
 
 export const documentListItemSchema = Type.Object({
 	id: Type.Number(),
 	number: Type.String(),
-	type: Type.Union([
-		Type.Literal('incoming'),
-		Type.Literal('transfer'),
-		Type.Literal('production'),
-	]),
-	status: Type.Union([Type.Literal('draft'), Type.Literal('completed'), Type.Literal('cancelled')]),
+	type: Type.Enum(DocumentType),
+	status: Type.Enum(DocumentStatus),
 	date: Type.String({ description: 'YYYY-MM-DD' }),
 	warehouseFromId: TNullable(Type.Number()),
 	warehouseToId: TNullable(Type.Number()),
@@ -29,14 +26,10 @@ export type DocumentListItemSchemaType = Static<typeof documentListItemSchema>;
 
 export const createGetDocumentsQueriesSchema = <F extends boolean>(noDefault: F) =>
 	Type.Object({
-		type: Type.Optional(
-			Type.Union([Type.Literal('incoming'), Type.Literal('transfer'), Type.Literal('production')])
-		),
+		type: Type.Optional(Type.Enum(DocumentType)),
 		supplierId: Type.Optional(Type.Number()),
 		warehouseId: Type.Optional(Type.Number()),
-		status: Type.Optional(
-			Type.Union([Type.Literal('draft'), Type.Literal('completed'), Type.Literal('cancelled')])
-		),
+		status: Type.Optional(Type.Enum(DocumentStatus)),
 		dateFrom: Type.Optional(Type.String({ description: 'YYYY-MM-DD' })),
 		dateTo: Type.Optional(Type.String({ description: 'YYYY-MM-DD' })),
 		sort: createSortSchema(noDefault, ['id', 'date', 'number', 'type', 'status']),

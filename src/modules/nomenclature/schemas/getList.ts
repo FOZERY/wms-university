@@ -7,7 +7,7 @@ function createGetListQueriesSchema<F extends boolean>(noDefault: F) {
 	return Type.Object({
 		limit: createLimitSchema(noDefault),
 		offset: createOffsetSchema(noDefault),
-		sort: createSortSchema(noDefault, ['id', 'code', 'name', 'type']),
+		sort: createSortSchema(noDefault, ['id', 'code', 'name', 'type', 'minQuantity']),
 		// free-text search across code and name
 		search: Type.Optional(Type.String({ minLength: 1 })),
 		type: Type.Optional(Type.Enum(ItemType)),
