@@ -13,7 +13,10 @@ import { lowStockItemSchema, LowStockItemSchemaType } from './schemas/lowStock';
 import {
 	warehouseUtilizationSchema,
 	WarehouseUtilizationSchemaType,
+	warehouseUtilizationQueriesSchema,
+	WarehouseUtilizationQueriesSchemaType,
 } from './schemas/warehouseUtilization';
+import { lowStockQueriesSchema, LowStockQueriesSchemaType } from './schemas/lowStock';
 import { StatsService } from './stats.service';
 
 @Controller('stats')
@@ -23,12 +26,16 @@ export class StatsController {
 
 	@Get('warehouse-utilization')
 	@ApiSwagger({
+		request: { queries: warehouseUtilizationQueriesSchema },
 		response: {
-			200: Type.Array(warehouseUtilizationSchema),
+			200: Type.Ref(require('./schemas/warehouseUtilization').warehouseUtilizationResponseSchema),
 		},
 	})
-	public async getWarehouseUtilization(): Promise<WarehouseUtilizationSchemaType[]> {
-		return await this.statsService.getWarehouseUtilization();
+	public async getWarehouseUtilization(
+		@TypeboxQueries(warehouseUtilizationQueriesSchema)
+		queries: WarehouseUtilizationQueriesSchemaType
+	) {
+		return await this.statsService.getWarehouseUtilization(queries);
 	}
 
 	@Get('daily-movements')
@@ -48,11 +55,14 @@ export class StatsController {
 
 	@Get('low-stock')
 	@ApiSwagger({
+		request: { queries: lowStockQueriesSchema },
 		response: {
 			200: Type.Array(lowStockItemSchema),
 		},
 	})
-	public async getLowStock(): Promise<LowStockItemSchemaType[]> {
-		return await this.statsService.getLowStock();
+	public async getLowStock(
+		@TypeboxQueries(lowStockQueriesSchema) queries: LowStockQueriesSchemaType
+	): Promise<LowStockItemSchemaType[]> {
+		return await this.statsService.getLowStock(queries);
 	}
 }

@@ -9,41 +9,95 @@ import {
 	warehousesTable,
 } from 'src/common/modules/drizzle/schema';
 import { DailyMovementSchemaType } from './schemas/dailyMovements';
-import { LowStockItemSchemaType } from './schemas/lowStock';
-import { WarehouseUtilizationSchemaType } from './schemas/warehouseUtilization';
+import { LowStockItemSchemaType, LowStockQueriesSchemaType } from './schemas/lowStock';
+import {
+	WarehouseUtilizationSchemaType,
+	WarehouseUtilizationQueriesSchemaType,
+} from './schemas/warehouseUtilization';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class StatsService {
 	public constructor(private readonly db: PostgresJsDatabase) {}
 
-	public async getWarehouseUtilization(): Promise<WarehouseUtilizationSchemaType[]> {
-		// Get count of unique items per warehouse
-		const results = await this.db
+	public async getWarehouseUtilization(queries?: WarehouseUtilizationQueriesSchemaType): Promise<{
+		overall: WarehouseUtilizationSchemaType[];
+		summary: WarehouseUtilizationSchemaType[];
+	}> {
+		const { limit, offset, breakdown } = queries ?? {};
+
+		// Sum occupied quantity per warehouse
+		let q = this.db
 			.select({
 				id: warehousesTable.id,
 				name: warehousesTable.name,
 				capacity: warehousesTable.capacity,
-				currentCount: sql<number>`COUNT(DISTINCT ${stockBalancesTable.itemId})`,
+				occupied: sql<number>`COALESCE(SUM(CAST(${stockBalancesTable.quantity} AS NUMERIC)), 0)`,
 			})
 			.from(warehousesTable)
-			.leftJoin(
-				stockBalancesTable,
-				sql`${warehousesTable.id} = ${stockBalancesTable.warehouseId} AND ${stockBalancesTable.quantity} > 0`
-			)
-			.groupBy(warehousesTable.id, warehousesTable.name, warehousesTable.capacity);
+			.leftJoin(stockBalancesTable, sql`${warehousesTable.id} = ${stockBalancesTable.warehouseId}`)
+			.groupBy(warehousesTable.id, warehousesTable.name, warehousesTable.capacity)
+			.$dynamic();
 
-		return results.map((r) => ({
-			id: r.id,
-			name: r.name,
-			capacity: r.capacity ?? 0,
-			currentCount: Number(r.currentCount) || 0,
-		}));
+		if (typeof offset === 'number') q = q.offset(offset);
+		if (typeof limit === 'number') q = q.limit(limit);
+
+		const rows = await q;
+
+		const mapped = rows.map((r) => {
+			const cap = r.capacity ?? 0;
+			const occupied = Number(r.occupied) || 0;
+			const free = cap - occupied;
+			const percent = cap > 0 ? (occupied / cap) * 100 : 0;
+			return {
+				id: r.id,
+				name: r.name,
+				capacity: cap,
+				occupied,
+				free,
+				percentOccupied: Math.max(0, Math.min(100, Number(percent))),
+				allocations: undefined as any,
+			} as WarehouseUtilizationSchemaType;
+		});
+
+		// If breakdown requested, fetch allocations per warehouse by item type
+		if (breakdown === 'type') {
+			const allocs = await this.db
+				.select({
+					warehouseId: stockBalancesTable.warehouseId,
+					type: itemsTable.type,
+					occupied: sql<number>`COALESCE(SUM(CAST(${stockBalancesTable.quantity} AS NUMERIC)),0)`,
+				})
+				.from(stockBalancesTable)
+				.innerJoin(itemsTable, sql`${stockBalancesTable.itemId} = ${itemsTable.id}`)
+				.groupBy(stockBalancesTable.warehouseId, itemsTable.type);
+
+			const map = new Map<number, Array<{ type: 'material' | 'product'; occupied: number }>>();
+			for (const a of allocs) {
+				const arr = map.get(a.warehouseId) ?? [];
+				const t = String(a.type) as 'material' | 'product';
+				arr.push({ type: t, occupied: Number(a.occupied) || 0 });
+				map.set(a.warehouseId, arr);
+			}
+
+			for (const m of mapped) {
+				m.allocations = map.get(m.id) ?? undefined;
+			}
+		}
+
+		// Return both overall and summary arrays (both include all warehouses)
+		return {
+			overall: mapped,
+			summary: mapped,
+		};
 	}
 
 	public async getDailyMovements(days: number = 14): Promise<DailyMovementSchemaType[]> {
 		// Calculate date range
 		const endDate = new Date();
 		const startDate = new Date();
-		startDate.setDate(startDate.getDate() - days);
+		// include endDate in the range: startDate = endDate - (days - 1)
+		startDate.setDate(startDate.getDate() - (days - 1));
 
 		// Get document counts grouped by date and type
 		const results = await this.db
@@ -96,27 +150,44 @@ export class StatsService {
 		return Array.from(dailyData.values()).sort((a, b) => a.date.localeCompare(b.date));
 	}
 
-	public async getLowStock(): Promise<LowStockItemSchemaType[]> {
-		// Get items where total quantity across all warehouses is below minimum
-		const results = await this.db
+	public async getLowStock(queries?: LowStockQueriesSchemaType): Promise<LowStockItemSchemaType[]> {
+		const { limit, warehouseId, onlyBelow } = queries ?? {};
+
+		// Build base selection: sum quantities (optionally by warehouse)
+		const totalExpr = warehouseId
+			? sql<string>`COALESCE(SUM(CAST(CASE WHEN ${stockBalancesTable.warehouseId} = ${warehouseId} THEN ${stockBalancesTable.quantity} ELSE 0 END AS NUMERIC)), '0')`
+			: sql<string>`COALESCE(SUM(CAST(${stockBalancesTable.quantity} AS NUMERIC)), '0')`;
+
+		let q = this.db
 			.select({
 				id: itemsTable.id,
 				name: itemsTable.name,
+				unit: itemsTable.unit,
 				minQuantity: itemsTable.minQuantity,
-				totalQuantity: sql<string>`COALESCE(SUM(${stockBalancesTable.quantity}), '0')`,
+				totalQuantity: totalExpr,
 			})
 			.from(itemsTable)
 			.leftJoin(stockBalancesTable, sql`${itemsTable.id} = ${stockBalancesTable.itemId}`)
-			.groupBy(itemsTable.id, itemsTable.name, itemsTable.minQuantity)
-			.having(
+			.groupBy(itemsTable.id, itemsTable.name, itemsTable.unit, itemsTable.minQuantity)
+			.$dynamic();
+
+		if (onlyBelow !== false) {
+			q = q.having(
 				sql`COALESCE(SUM(CAST(${stockBalancesTable.quantity} AS NUMERIC)), 0) < CAST(${itemsTable.minQuantity} AS NUMERIC)`
 			);
+		}
 
-		return results.map((r) => ({
+		if (typeof limit === 'number') q = q.limit(limit);
+
+		const rows = await q;
+
+		return rows.map((r) => ({
 			id: r.id,
 			name: r.name,
-			current: parseFloat(r.totalQuantity) || 0,
-			min: parseFloat(r.minQuantity) || 0,
+			current: parseFloat(String(r.totalQuantity)) || 0,
+			min: parseFloat(String(r.minQuantity)) || 0,
+			unit: r.unit ?? undefined,
+			warehouseId: warehouseId ?? undefined,
 		}));
 	}
 }
