@@ -36,6 +36,20 @@
       "when": 1765576538141,
       "tag": "0004_charming_devos",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1766100728340,
+      "tag": "0005_perfect_calypso",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1766331311679,
+      "tag": "0006_even_jetstream",
+      "breakpoints": true
     }
   ]
 }

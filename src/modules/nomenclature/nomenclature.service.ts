@@ -1,5 +1,5 @@
-import { ConflictException, ForbiddenException } from '@nestjs/common';
-import { and, eq, ilike } from 'drizzle-orm';
+import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
+import { and, eq, ilike, or } from 'drizzle-orm';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { setOrderByColumn, trimObject, UserRoles, UserSession } from 'src/common';
 import { itemsTable } from 'src/common/modules/drizzle/schema';
@@ -8,19 +8,22 @@ import { GetListQueriesSchemaPrivateType } from './schemas/getList';
 import { ItemDbType, ItemInsertDbType } from './types';
 import { ItemType } from 'src/common/enums/item-type';
 
+@Injectable()
 export class NomenclatureService {
 	public constructor(private readonly db: PostgresJsDatabase) {}
 
 	public async list(queries: GetListQueriesSchemaPrivateType): Promise<ItemDbType[]> {
-		const { limit, offset, sort, name, code, type } = queries;
+		const { limit, offset, sort, search, type } = queries;
 
 		let query = this.db
 			.select()
 			.from(itemsTable)
 			.where(
 				and(
-					name ? ilike(itemsTable.name, `%${name}%`) : undefined,
-					code ? ilike(itemsTable.code, `%${code}%`) : undefined,
+					// if search provided, match either name OR code
+					search
+						? or(ilike(itemsTable.name, `%${search}%`), ilike(itemsTable.code, `%${search}%`))
+						: undefined,
 					type ? eq(itemsTable.type, type) : undefined
 				)
 			)
@@ -109,5 +112,9 @@ export class NomenclatureService {
 			.returning({ id: itemsTable.id });
 
 		return firstOrThrow(updated);
+	}
+
+	public async delete(id: ItemDbType['id']): Promise<void> {
+		await this.db.delete(itemsTable).where(eq(itemsTable.id, id));
 	}
 }
