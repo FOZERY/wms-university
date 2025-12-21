@@ -1,4 +1,4 @@
-import { Controller, Get, NotFoundException, Patch, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, NotFoundException, Patch, Post, UseGuards, Res } from '@nestjs/common';
 import {
 	CurrentUserSession,
 	TypeboxBody,
@@ -12,6 +12,8 @@ import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { ApiSwagger } from 'src/common/swagger';
 import Type from 'typebox';
+import { type Response } from 'express';
+import { getDocumentPdfResponseSchema } from './schemas/getPdf';
 import { DocumentsService } from './documents.service';
 import { createDocumentBodySchema, CreateDocumentBodySchemaType } from './schemas/createDocument';
 import { documentDetailSchema, DocumentDetailSchemaType } from './schemas/documentDetail';
@@ -60,6 +62,25 @@ export class DocumentsController {
 			throw new NotFoundException('Document not found');
 		}
 		return document;
+	}
+
+	@Get(':id/print')
+	@ApiSwagger({
+		request: {
+			params: getByIdParamsSchema,
+		},
+		response: {
+			200: getDocumentPdfResponseSchema,
+		},
+	})
+	public async print(
+		@TypeboxParams(getByIdParamsSchema) params: GetByIdParamsSchemaType,
+		@Res({ passthrough: true }) res: Response
+	): Promise<Buffer> {
+		const pdf = await this.documentsService.generatePdfBuffer(params.id);
+		res.setHeader('Content-Type', pdf.mime);
+		res.setHeader('Content-Disposition', `attachment; filename="${pdf.filename}"`);
+		return pdf.buffer;
 	}
 
 	@Post()

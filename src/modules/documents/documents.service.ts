@@ -464,4 +464,53 @@ export class DocumentsService {
 			}
 		}
 	}
+
+	public async generatePdfBuffer(
+		id: number
+	): Promise<{ buffer: Buffer; filename: string; mime: string }> {
+		const detail = await this.getById(id);
+		if (!detail) {
+			throw new NotFoundException('Document not found');
+		}
+
+		// Lazy-require pdfkit to avoid top-level import issues
+		const PDFDocument = require('pdfkit');
+		const doc = new PDFDocument({ size: 'A4', margin: 50 });
+
+		const chunks: Buffer[] = [];
+		doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+		const endPromise = new Promise<void>((resolve) => doc.on('end', () => resolve()));
+
+		// Header
+		doc.fontSize(16).text(`Document ${detail.number}`, { align: 'center' });
+		doc.moveDown();
+
+		doc.fontSize(12).text(`Date: ${detail.date}`);
+		doc.text(`Type: ${detail.type}`);
+		doc.text(`Status: ${detail.status}`);
+		if (detail.supplier) doc.text(`Supplier: ${detail.supplier.name}`);
+		if (detail.warehouseFrom) doc.text(`From: ${detail.warehouseFrom.name}`);
+		if (detail.warehouseTo) doc.text(`To: ${detail.warehouseTo.name}`);
+		if (detail.comment) {
+			doc.moveDown();
+			doc.text(`Comment: ${detail.comment}`);
+		}
+
+		doc.moveDown();
+		doc.text('Items:', { underline: true });
+		doc.moveDown(0.5);
+
+		for (const item of detail.items) {
+			const line = `${item.item.code ?? item.itemId} — ${item.item.name} | ${item.quantity} ${item.item.unit ?? ''}`;
+			doc.text(line);
+		}
+
+		// Finalize PDF
+		doc.end();
+		await endPromise;
+
+		const buffer = Buffer.concat(chunks);
+		const filename = `document-${detail.number}.pdf`;
+		return { buffer, filename, mime: 'application/pdf' };
+	}
 }
