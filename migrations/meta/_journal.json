@@ -50,6 +50,20 @@
       "when": 1766331311679,
       "tag": "0006_even_jetstream",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1766347008476,
+      "tag": "0007_fat_tattoo",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1766347587280,
+      "tag": "0008_old_kate_bishop",
+      "breakpoints": true
     }
   ]
 }

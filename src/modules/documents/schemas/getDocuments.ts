@@ -12,14 +12,11 @@ export const documentListItemSchema = Type.Object({
 	warehouseFromId: TNullable(Type.Number()),
 	warehouseToId: TNullable(Type.Number()),
 	supplierId: TNullable(Type.Number()),
-	author: Type.Optional(
-		Type.Object({
-			id: Type.String({ format: 'uuid' }),
-			login: Type.String(),
-			firstname: Type.String(),
-			lastname: Type.String(),
-		})
-	),
+	author: Type.Object({
+		firstname: Type.String(),
+		lastname: Type.String(),
+		middlename: TNullable(Type.String()),
+	}),
 });
 
 export type DocumentListItemSchemaType = Static<typeof documentListItemSchema>;
@@ -32,6 +29,9 @@ export const createGetDocumentsQueriesSchema = <F extends boolean>(noDefault: F)
 		status: Type.Optional(Type.Enum(DocumentStatus)),
 		dateFrom: Type.Optional(Type.String({ description: 'YYYY-MM-DD' })),
 		dateTo: Type.Optional(Type.String({ description: 'YYYY-MM-DD' })),
+		// free-text search across document number and author name parts
+		search: Type.Optional(Type.String({ minLength: 1 })),
+		itemId: Type.Optional(Type.Number()),
 		sort: createSortSchema(noDefault, ['id', 'date', 'number', 'type', 'status']),
 		limit: createLimitSchema(noDefault),
 		offset: createOffsetSchema(noDefault),

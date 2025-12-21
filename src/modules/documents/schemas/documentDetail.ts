@@ -24,7 +24,11 @@ export const documentDetailSchema = Type.Object({
 	type: Type.Enum(DocumentType),
 	status: Type.Enum(DocumentStatus),
 	date: Type.String({ description: 'YYYY-MM-DD' }),
-	userId: Type.String({ format: 'uuid' }),
+	author: Type.Object({
+		firstname: Type.String(),
+		lastname: Type.String(),
+		middlename: TNullable(Type.String()),
+	}),
 	warehouseFromId: TNullable(Type.Number()),
 	warehouseToId: TNullable(Type.Number()),
 	supplierId: TNullable(Type.Number()),

@@ -1,6 +1,7 @@
 import {
 	date,
 	integer,
+	jsonb,
 	numeric,
 	pgEnum,
 	pgTable,
@@ -8,13 +9,12 @@ import {
 	serial,
 	text,
 	timestamp,
-	uuid,
 } from 'drizzle-orm/pg-core';
-import { UserRoles } from 'src/common/enums/roles';
-import { ItemType } from 'src/common/enums/item-type';
-import { DocumentType } from 'src/common/enums/document-type';
-import { DocumentStatus } from 'src/common/enums/document-status';
 import { DocumentItemDirection } from 'src/common/enums/document-item-direction';
+import { DocumentStatus } from 'src/common/enums/document-status';
+import { DocumentType } from 'src/common/enums/document-type';
+import { ItemType } from 'src/common/enums/item-type';
+import { UserRoles } from 'src/common/enums/roles';
 import { idUuidV7, timestamps } from './helpers/schema.helpers';
 
 export const roleEnum = pgEnum('role', UserRoles);
@@ -71,11 +71,11 @@ export const documentsTable = pgTable('documents', {
 	id: serial().primaryKey(),
 	number: text().notNull().unique(),
 	type: documentTypeEnum().notNull(),
-	status: documentStatusEnum().default(DocumentStatus.Draft).notNull(),
+	status: documentStatusEnum().notNull(),
 	date: date().notNull().defaultNow(),
-	userId: uuid()
-		.notNull()
-		.references(() => usersTable.id),
+	userData: jsonb()
+		.$type<{ firstname: string; lastname: string; middlename: string | null }>()
+		.notNull(),
 	warehouseFromId: integer().references(() => warehousesTable.id),
 	warehouseToId: integer().references(() => warehousesTable.id),
 	supplierId: integer().references(() => suppliersTable.id),

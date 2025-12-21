@@ -24,6 +24,7 @@ import {
 	getDocumentsQueriesSchema,
 	GetDocumentsQueriesSchemaPrivateType,
 } from './schemas/getDocuments';
+import { create } from 'domain';
 
 @Controller('documents')
 @UseGuards(AuthGuard, RolesGuard)
@@ -75,12 +76,12 @@ export class DocumentsController {
 	})
 	public async print(
 		@TypeboxParams(getByIdParamsSchema) params: GetByIdParamsSchemaType,
-		@Res({ passthrough: true }) res: Response
-	): Promise<Buffer> {
+		@Res() res: Response
+	) {
 		const pdf = await this.documentsService.generatePdfBuffer(params.id);
 		res.setHeader('Content-Type', pdf.mime);
 		res.setHeader('Content-Disposition', `attachment; filename="${pdf.filename}"`);
-		return pdf.buffer;
+		res.end(pdf.buffer);
 	}
 
 	@Post()

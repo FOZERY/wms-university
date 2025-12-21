@@ -11,7 +11,7 @@ export const createDocumentBodySchema = Type.Object({
 	type: Type.Enum(DocumentType),
 	date: Type.Optional(Type.String({ description: 'YYYY-MM-DD' })),
 	warehouseFromId: Type.Optional(Type.Integer()),
-	warehouseToId: Type.Optional(Type.Integer()),
+	warehouseToId: Type.Integer(),
 	supplierId: Type.Optional(Type.Integer()),
 	comment: Type.Optional(Type.String()),
 	items: Type.Array(documentItemInputSchema),

@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { and, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, eq, exists, gte, ilike, lte, or, sql } from 'drizzle-orm';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { setOrderByColumn } from 'src/common';
 import { DocumentItemDirection } from 'src/common/enums/document-item-direction';
 import { DocumentStatus } from 'src/common/enums/document-status';
 import { DocumentType } from 'src/common/enums/document-type';
@@ -9,13 +10,11 @@ import {
 	documentsTable,
 	itemsTable,
 	suppliersTable,
-	usersTable,
 	warehousesTable,
 } from 'src/common/modules/drizzle/schema';
 import { UserSession } from 'src/common/types/user-session';
 import { firstOrNull } from 'src/common/utils/result.utils';
 import { StockService } from '../stock/stock.service';
-import { setOrderByColumn } from 'src/common';
 import { CreateDocumentBodySchemaType } from './schemas/createDocument';
 import { DocumentDetailSchemaType } from './schemas/documentDetail';
 import {
@@ -23,6 +22,11 @@ import {
 	GetDocumentsQueriesSchemaPrivateType,
 } from './schemas/getDocuments';
 import { DocumentDbType, DocumentItemInsertDbType } from './types';
+import path from 'node:path';
+import fs from 'node:fs';
+import { create } from 'node:domain';
+import { type } from 'node:os';
+import { async } from 'rxjs';
 
 @Injectable()
 export class DocumentsService {
@@ -34,7 +38,8 @@ export class DocumentsService {
 	public async list(
 		queries: GetDocumentsQueriesSchemaPrivateType
 	): Promise<DocumentListItemSchemaType[]> {
-		const { type, status, dateFrom, dateTo, supplierId, sort, limit, offset } = queries;
+		const { type, status, dateFrom, dateTo, supplierId, itemId, search, sort, limit, offset } =
+			queries;
 
 		const conditions = [];
 		if (type) conditions.push(eq(documentsTable.type, type as DocumentType));
@@ -42,6 +47,32 @@ export class DocumentsService {
 		if (dateFrom) conditions.push(gte(documentsTable.date, dateFrom));
 		if (dateTo) conditions.push(lte(documentsTable.date, dateTo));
 		if (supplierId) conditions.push(eq(documentsTable.supplierId, supplierId));
+
+		if (search) {
+			// search by document number OR any part of author's name stored in documents.userData JSONB
+			conditions.push(
+				or(
+					ilike(documentsTable.number, `%${search}%`),
+					ilike(sql`${documentsTable.userData} ->> 'firstname'`, `%${search}%`),
+					ilike(sql`${documentsTable.userData} ->> 'lastname'`, `%${search}%`),
+					ilike(sql`${documentsTable.userData} ->> 'middlename'`, `%${search}%`)
+				)
+			);
+		}
+		// If itemId provided, restrict to documents that contain this item
+		if (itemId) {
+			const sub = this.db
+				.select()
+				.from(documentItemsTable)
+				.where(
+					and(
+						eq(documentItemsTable.documentId, documentsTable.id),
+						eq(documentItemsTable.itemId, itemId)
+					)
+				);
+
+			conditions.push(exists(sub));
+		}
 
 		let query = this.db
 			.select({
@@ -53,13 +84,9 @@ export class DocumentsService {
 				warehouseFromId: documentsTable.warehouseFromId,
 				warehouseToId: documentsTable.warehouseToId,
 				supplierId: documentsTable.supplierId,
-				userId: usersTable.id,
-				userLogin: usersTable.login,
-				userFirstname: usersTable.firstname,
-				userLastname: usersTable.lastname,
+				userData: documentsTable.userData,
 			})
 			.from(documentsTable)
-			.leftJoin(usersTable, eq(documentsTable.userId, usersTable.id))
 			.where(and(...conditions))
 			.$dynamic();
 
@@ -86,14 +113,7 @@ export class DocumentsService {
 			warehouseFromId: doc.warehouseFromId ?? null,
 			warehouseToId: doc.warehouseToId ?? null,
 			supplierId: doc.supplierId ?? null,
-			author: doc.userId
-				? {
-						id: doc.userId,
-						login: doc.userLogin || '',
-						firstname: doc.userFirstname || '',
-						lastname: doc.userLastname || '',
-					}
-				: undefined,
+			author: doc.userData,
 		}));
 	}
 
@@ -163,7 +183,7 @@ export class DocumentsService {
 			type: doc.type,
 			status: doc.status,
 			date: doc.date,
-			userId: doc.userId,
+			author: doc.userData,
 			warehouseFromId: doc.warehouseFromId ?? null,
 			warehouseToId: doc.warehouseToId ?? null,
 			supplierId: doc.supplierId ?? null,
@@ -207,7 +227,11 @@ export class DocumentsService {
 					type: data.type as DocumentType,
 					status: DocumentStatus.Completed, // Auto-complete on creation
 					date: data.date ?? new Date().toISOString().split('T')[0],
-					userId: userSession.id,
+					userData: {
+						firstname: userSession.firstname,
+						lastname: userSession.lastname,
+						middlename: userSession.middlename ?? null,
+					},
 					warehouseFromId: data.warehouseFromId ?? null,
 					warehouseToId: data.warehouseToId ?? null,
 					supplierId: data.supplierId ?? null,
@@ -475,34 +499,109 @@ export class DocumentsService {
 
 		// Lazy-require pdfkit to avoid top-level import issues
 		const PDFDocument = require('pdfkit');
-		const doc = new PDFDocument({ size: 'A4', margin: 50 });
+		// Увеличенный отступ для печати
+		const doc = new PDFDocument({ size: 'A4', margin: 80 });
+		// Подключаем шрифт с поддержкой кириллицы — предпочитаем Roboto, затем DejaVu
+		const candidatePaths = [
+			// Roboto candidates
+			path.resolve(__dirname, '../../assets/fonts/Roboto-Regular.ttf'),
+			path.resolve(process.cwd(), 'src/assets/fonts/Roboto-Regular.ttf'),
+			path.resolve(process.cwd(), 'dist/assets/fonts/Roboto-Regular.ttf'),
+			// DejaVu fallback
+			path.resolve(__dirname, '../../assets/fonts/DejaVuSans.ttf'),
+			path.resolve(process.cwd(), 'src/assets/fonts/DejaVuSans.ttf'),
+			path.resolve(process.cwd(), 'dist/assets/fonts/DejaVuSans.ttf'),
+		];
+		const fontPath = candidatePaths.find((p) => fs.existsSync(p));
+		if (!fontPath) {
+			throw new Error(`No supported font found. Checked: ${candidatePaths.join(', ')}`);
+		}
+		const fontName = /roboto/i.test(path.basename(fontPath)) ? 'roboto' : 'dejavu';
+		doc.registerFont(fontName, fontPath);
+		doc.font(fontName);
 
 		const chunks: Buffer[] = [];
 		doc.on('data', (chunk: Buffer) => chunks.push(chunk));
 		const endPromise = new Promise<void>((resolve) => doc.on('end', () => resolve()));
 
-		// Header
-		doc.fontSize(16).text(`Document ${detail.number}`, { align: 'center' });
-		doc.moveDown();
-
-		doc.fontSize(12).text(`Date: ${detail.date}`);
-		doc.text(`Type: ${detail.type}`);
-		doc.text(`Status: ${detail.status}`);
-		if (detail.supplier) doc.text(`Supplier: ${detail.supplier.name}`);
-		if (detail.warehouseFrom) doc.text(`From: ${detail.warehouseFrom.name}`);
-		if (detail.warehouseTo) doc.text(`To: ${detail.warehouseTo.name}`);
-		if (detail.comment) {
-			doc.moveDown();
-			doc.text(`Comment: ${detail.comment}`);
+		// Мапперы для русских названий
+		function mapDocumentTypeToRu(type?: string) {
+			if (!type) return '-';
+			if (type === 'incoming') return 'Приходный ордер';
+			if (type === 'transfer') return 'Перемещение';
+			if (type === 'production') return 'Производство';
+			return String(type);
+		}
+		function mapDocumentStatusToRu(status?: string) {
+			if (!status) return '-';
+			if (status === 'draft') return 'Черновик';
+			if (status === 'completed') return 'Проведён';
+			if (status === 'cancelled') return 'Отменён';
+			return String(status);
 		}
 
-		doc.moveDown();
-		doc.text('Items:', { underline: true });
+		// Header
+		doc.fontSize(22).text(`Документ № ${detail.number}`, { align: 'center' });
+		doc.moveDown(1.5);
+
+		// Основной блок информации (больше шрифт и небольшой межстрочный интервал)
+		doc.fontSize(14).text(`Дата: ${detail.date}`, { lineGap: 4 });
+		doc.text(`Тип: ${mapDocumentTypeToRu(detail.type)}`, { lineGap: 4 });
+		doc.text(`Статус: ${mapDocumentStatusToRu(detail.status)}`, { lineGap: 4 });
+		if (detail.supplier) doc.text(`Поставщик: ${detail.supplier.name}`);
+		if (detail.warehouseFrom) doc.text(`Со склада: ${detail.warehouseFrom.name}`);
+		if (detail.warehouseTo) doc.text(`На склад: ${detail.warehouseTo.name}`);
+		if (detail.comment) {
+			doc.moveDown(1);
+			doc.text(`Комментарий: ${detail.comment}`, { lineGap: 6 });
+		}
+
+		doc.moveDown(1);
+		doc.fontSize(16).text('Позиции:', { underline: true });
 		doc.moveDown(0.5);
 
+		// Render positions as a simple list (one block per item). Simpler and more robust than table drawing.
+		const pageMargins = (doc.page && (doc.page.margins as any)) || {
+			left: 80,
+			right: 80,
+			top: 80,
+			bottom: 80,
+		};
+
+		const maxY = () => doc.page.height - (pageMargins.bottom ?? 80) - 40;
+
 		for (const item of detail.items) {
-			const line = `${item.item.code ?? item.itemId} — ${item.item.name} | ${item.quantity} ${item.item.unit ?? ''}`;
-			doc.text(line);
+			// Ensure there is space for the item block, otherwise add a new page and reprint header
+			const estimatedBlockHeight = 36; // two lines + small gap
+			if (doc.y + estimatedBlockHeight > maxY()) {
+				doc.addPage();
+				doc.moveDown(0.5);
+				doc.fontSize(16).text('Позиции:', { underline: true });
+				doc.moveDown(0.5);
+			}
+
+			const code = String(item.item.code ?? item.itemId);
+			const name = String(item.item.name ?? '');
+			const qty = String(item.quantity);
+			const unit = String(item.item.unit ?? '');
+
+			const left = pageMargins.left ?? 80;
+			const usableWidth = doc.page.width - (pageMargins.left ?? 80) - (pageMargins.right ?? 80);
+
+			// Draw name on the left and quantity right-aligned on the same line.
+			const lineY = doc.y;
+			doc
+				.fontSize(12)
+				.fillColor('black')
+				.text(`- ${code} — ${name}`, left, lineY, {
+					width: Math.max(usableWidth - 140, 100),
+					ellipsis: true,
+				});
+			doc.fontSize(12).fillColor('black').text(`Кол-во: ${qty} ${unit}`, left, lineY, {
+				width: usableWidth,
+				align: 'right',
+			});
+			doc.moveDown(0.8);
 		}
 
 		// Finalize PDF
@@ -510,7 +609,9 @@ export class DocumentsService {
 		await endPromise;
 
 		const buffer = Buffer.concat(chunks);
-		const filename = `document-${detail.number}.pdf`;
+		// Очистить номер документа для имени файла (только латиница, цифры, дефис, подчёркивание)
+		const safeNumber = String(detail.number).replace(/[^a-zA-Z0-9-_]/g, '_');
+		const filename = `document-${safeNumber}.pdf`;
 		return { buffer, filename, mime: 'application/pdf' };
 	}
 }
